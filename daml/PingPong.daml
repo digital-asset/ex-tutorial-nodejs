@@ -1,0 +1,39 @@
+-- Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module PingPong where
+
+template Ping
+  with
+    sender: Party
+    receiver: Party
+    count: Int
+  where
+    signatory sender
+    observer receiver
+
+    controller receiver can
+      ReplyPong : ()
+        do
+          if count >= 3 then return ()
+          else do
+            create Pong with sender = receiver; receiver = sender; count = count + 1
+            return ()
+
+template Pong
+  with
+    sender: Party
+    receiver: Party
+    count: Int
+  where
+    signatory sender
+    observer receiver
+
+    controller receiver can
+      ReplyPing : ()
+        do
+          if count >= 3 then return ()
+          else do
+            create Ping with sender = receiver; receiver = sender; count = count + 1
+            return ()

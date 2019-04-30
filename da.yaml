@@ -1,5 +1,5 @@
 project:
-  sdk-version: 0.11.14
+  sdk-version: 0.12.2
   name: ex-tutorial-nodejs
   source: daml/PingPong.daml
   parties:

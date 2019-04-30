@@ -1,8 +1,7 @@
 // Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-const ledger = require('@da/daml-ledger').data;
-const da = require('@da/daml-ledger').da;
+const daml = require('@digitalasset/daml-ledger');
 const fs = require('fs');
 
 const [host, port, out] = readOptions();
@@ -17,7 +16,7 @@ process.on('beforeExit', () => {
     }
 });
 
-ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
     if (error) throw error;
     let first = true;
     client.packageClient.listPackages((error, response) => {
@@ -25,15 +24,16 @@ ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         for (const packageId of response.packageIds) {
             client.packageClient.getPackage(packageId, (error, response) => {
                 if (error) throw error;
-                const payload = da.daml_lf.ArchivePayload.deserializeBinary(response.archivePayload);
+                const payload = daml.lf.ArchivePayload.deserializeBinary(response.archivePayload);
                 for (const damlModule of payload.getDamlLf1().getModulesList()) {
                     const moduleName = damlModule.getName().getSegmentsList().join('.');
                     for (const template of damlModule.getTemplatesList()) {
-                        const templateName = template.getTycon();
-                        const name = [moduleName, templateName].join('.');
+                        const templateName = template.getTycon().getSegmentsList().join('.');
+                        const name = `${moduleName}.${templateName}`;
                         writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
                             packageId: packageId,
-                            name: name
+                            moduleName: moduleName,
+                            entityName: templateName
                         })}`);
                         first = false;
                     }

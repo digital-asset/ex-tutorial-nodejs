@@ -3,4 +3,4 @@ target/
 .vscode/
 logs/
 *.log
-*.json
+template-ids.json

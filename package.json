@@ -1,0 +1,12 @@
+{
+  "name": "tutorial",
+  "version": "0.5.0",
+  "dependencies": {
+    "@digitalasset/daml-ledger": "0.5.0",
+    "uuid": "3.3.2"
+  },
+  "scripts": {
+    "start": "node ./index.js",
+    "fetch-template-ids": "rm -f ./template-ids.json && node ./util/fetch-template-ids.js -o ./template-ids.json"
+  }
+}

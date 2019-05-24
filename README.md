@@ -349,11 +349,21 @@ This method takes the following request:
 
 Have a look at the request:
 
-- `begin`: the offset at which you'll start reading transactions from the ledger. In this case you want to listen starting from the latest one (represented by the constant `da.LedgerOffset.Boundary.END`)
+- `begin`: the offset at which you'll start reading transactions from the ledger. In this case you want to listen starting from the first one (represented by the constant `daml.LedgerOffsetBoundaryValue.BEGIN`)
 - `end`: the optional offset at which you want the reads to end -- if absent (as in this case) the application keeps listening to incoming transactions
 - `filter`: represents which contracts you want the ledger to show you: in this case you are asking for the transactions visible to `sender` containing contracts whose `templateId` matches either `PING` or `PONG`.
 
-When the `getTransactions` method is invoked with this request the application listens to the latest transactions coming to the ledger.
+---
+
+### Note
+
+#### Why subscribing from the beginning and not simply _tailing_ the transactions?
+
+Purely for educational purposes: in the end, the application will _tail_ the transaction stream. For now, we'll subscribe from the beginning to make sure the application can read its own transaction, so that you can more easily observe the behavior of creating a contract and observing that same event.
+
+---
+
+When the `getTransactions` method is invoked with this request the application listens to all transactions coming to the ledger.
 
 The output of this method is a Node.js stream. As such, you can register callbacks on the `'data'` and `'error'` events.
 
@@ -530,9 +540,9 @@ Wrap this code into a new function `react` that takes a `workflowId` and an `eve
 
 Finally, pass the `react` function as a parameter to the only call of `listenForTransactions`.
 
-The app is almost ready to start, there's only one tweak to make: before writing the code to react to transactions, in order for us to observe the transactions while running a single application, the code you wrote subscribed to the ledger from it's beginning (`LedgerOffsetBoundaryValue.BEGIN`). The next time you'll run the application you'll instead _tail_ the ledger subscribing to the end of if (`LedgerOffsetBoundaryValue.END`) so that you can only observe the live interaction between two running applications.
+The application is now ready to be tested with two instances running at once: we can now _tail_ the transaction stream instead of subscribing to it from the beginning by replacing the occurrences of `ledger.LedgerOffsetBoundaryValue.BEGIN` with `ledger.LedgerOffsetBoundaryValue.END`.
 
-Your code should now look like the following:
+Review the code before running the application. Your code should now look like the following:
 
     ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;

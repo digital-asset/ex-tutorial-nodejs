@@ -33,7 +33,7 @@ The focus is not on the complexity of the model, but rather on how to use the bi
 
 The DAML code in this repository makes use of the SDK 0.12.20 and the `daml` SDK assistant.
 
-You are therefore strongly advised to have at least the SDK 0.12.20 installed.
+Make sure you have the SDK 0.12.20 (or greater) installed.
 
 [Back to the table of contents](#table-of-contents)
 

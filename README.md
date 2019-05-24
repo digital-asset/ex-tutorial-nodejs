@@ -53,7 +53,7 @@ The repo includes `daml/PingPong.daml`, which is the source for a DAML module wi
 
 ## Compile the DAML code
 
-Before getting started, build the DAML code with
+Before getting started, move to the project root directory and build the DAML code with
 
     daml build
 
@@ -61,9 +61,7 @@ Before getting started, build the DAML code with
 
 ## Run the sandbox
 
-Use the sandbox to run and test your application.
-
-Now that you created the project and you're in its directory:
+Use the sandbox to run and test your application:
 
 1. open a new shell (the running sandbox will keep it busy), and
 2. start the sandbox by running

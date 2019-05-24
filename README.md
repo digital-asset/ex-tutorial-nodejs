@@ -102,9 +102,9 @@ Let's go through the skeleton part by part to understand what's going on:
 
 The first line loads the bindings and allows you to refer to them through the `ledger` object.
 
-The second one creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express DAML values in your code concisely.
+The second line creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express DAML values in your code concisely.
 
-The third one introduces a dependency that is going to be later used to generate unique identifiers; no need to worry about it now.
+The third line introduces a dependency that is going to be later used to generate unique identifiers; no need to worry about it now.
 
     let [, , host, port] = process.argv;
 

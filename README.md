@@ -870,7 +870,7 @@ Note that the transaction filter was factored out as it can be shared. The final
 
     });
 
-Before running this you should start with a clean ledger to avoid being confused by the unprocessed contracts from previous examples:
+Before running the application, start with a clean ledger to avoid receiving unprocessed contracts from previous examples:
 
 1. go to the shell where you are running the sandbox
 2. hit CTRL+C to shut it down and wait for your shell prompt

@@ -100,7 +100,7 @@ Let's go through the skeleton part by part to understand what's going on:
 
     const uuidv4 = require('uuid/v4');
 
-The first line loads the bindings and allows you to refer to them through the `daml` object.
+The first line loads the bindings and allows you to refer to them through the `ledger` object.
 
 The second one creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express DAML values in your code concisely.
 

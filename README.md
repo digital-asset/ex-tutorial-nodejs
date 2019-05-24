@@ -359,7 +359,7 @@ Have a look at the request:
 
 #### Why subscribing from the beginning and not simply _tailing_ the transactions?
 
-Purely for educational purposes: in the end, the application will _tail_ the transaction stream. For now, we'll subscribe from the beginning to make sure the application can read its own transaction, so that you can more easily observe the behavior of creating a contract and observing that same event.
+Purely for educational purposes: in the end, the application will _tail_ the transaction stream. For now, the app subscribes from the beginning to make sure it can read the events it causes, so that you can more easily observe the contract creation.
 
 ---
 
@@ -540,7 +540,7 @@ Wrap this code into a new function `react` that takes a `workflowId` and an `eve
 
 Finally, pass the `react` function as a parameter to the only call of `listenForTransactions`.
 
-The application is now ready to be tested with two instances running at once: we can now _tail_ the transaction stream instead of subscribing to it from the beginning by replacing the occurrences of `ledger.LedgerOffsetBoundaryValue.BEGIN` with `ledger.LedgerOffsetBoundaryValue.END`.
+The application is now ready to be tested with two instances running at once: it can now _tail_ the transaction stream instead of subscribing to it from the beginning by replacing the occurrences of `ledger.LedgerOffsetBoundaryValue.BEGIN` with `ledger.LedgerOffsetBoundaryValue.END`.
 
 Review the code before running the application. Your code should now look like the following:
 

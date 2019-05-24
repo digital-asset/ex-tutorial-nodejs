@@ -1,12 +1,40 @@
 {
-  "name": "tutorial",
-  "version": "0.5.0",
+  "name": "ex-tutorial-nodejs",
+  "version": "0.6.0",
+  "description": "An interactive tutorial to get started with the Node.js bindings for DAML",
+  "main": "index.js",
   "dependencies": {
-    "@digitalasset/daml-ledger": "0.5.0",
+    "@digitalasset/daml-ledger": "0.6.0",
     "uuid": "3.3.2"
   },
   "scripts": {
     "start": "node ./index.js",
     "fetch-template-ids": "rm -f ./template-ids.json && node ./util/fetch-template-ids.js -o ./template-ids.json"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/digital-asset/ex-tutorial-nodejs.git"
+  },
+  "keywords": [
+    "smart",
+    "contracts",
+    "distributed",
+    "ledger",
+    "technologies",
+    "dlt",
+    "blockchain"
+  ],
+  "author": {
+    "name": "Digital Asset (Switzerland) GmbH and/or its affiliates",
+    "email": "support@digitalasset.com",
+    "url": "https://www.digitalasset.com"
+  },
+  "contributors": [
+    "Stefano Baghino <stefano.baghino@digitalasset.com>"
+  ],
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/digital-asset/ex-tutorial-nodejs/issues"
+  },
+  "homepage": "https://github.com/digital-asset/ex-tutorial-nodejs#readme"
 }

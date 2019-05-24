@@ -3,17 +3,19 @@
 ## Table of contents
 
 1.  [Introduction](#introduction)
-2.  [Create the project](#create-the-project)
-3.  [Run the sandbox](#run-the-sandbox)
-4.  [Run the skeleton app](#run-the-skeleton-app)
-5.  [Understand the skelelon](#understand-the-skeleton)
-6.  [Retrieve the package identifiers](#retrieve-the-package-identifiers)
-7.  [Understand the `PingPong` module](#understand-the-pingpong-module)
-8.  [Pass the parties as parameters](#pass-the-parties-as-parameters)
-9.  [Create a contract](#create-a-contract)
-10. [Read the transactions](#read-the-transactions)
-11. [Exercise a choice](#exercise-a-choice)
-12. [Read the active contracts](#read-the-active-contracts)
+2.  [Prerequisites](#prerequisites)
+3.  [Create the project](#create-the-project)
+4.  [Compile the DAML Code](#compile-the-daml-code)
+5.  [Run the sandbox](#run-the-sandbox)
+6.  [Run the skeleton app](#run-the-skeleton-app)
+7.  [Understand the skelelon](#understand-the-skeleton)
+8.  [Retrieve the package identifiers](#retrieve-the-package-identifiers)
+9.  [Understand the `PingPong` module](#understand-the-pingpong-module)
+10. [Pass the parties as parameters](#pass-the-parties-as-parameters)
+11. [Create a contract](#create-a-contract)
+12. [Read the transactions](#read-the-transactions)
+13. [Exercise a choice](#exercise-a-choice)
+14. [Read the active contracts](#read-the-active-contracts)
 
 ## Introduction
 
@@ -27,6 +29,14 @@ The focus is not on the complexity of the model, but rather on how to use the bi
 
 [Back to the table of contents](#table-of-contents)
 
+## Prerequisites
+
+The DAML code in this repository makes use of the SDK 0.12.20 and the `daml` SDK assistant.
+
+You are therefore strongly advised to have at least the SDK 0.12.20 installed.
+
+[Back to the table of contents](#table-of-contents)
+
 ## Create the project
 
 There is a skeleton application called `ex-tutorial-nodejs` that you can get from the [GitHub](https://github.com/digital-asset/ex-tutorial-nodejs).
@@ -35,9 +45,17 @@ To set it up, clone the repo, making sure to checkout the tag corresponding to t
 
     git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
     cd ex-tutorial-nodejs
-    git checkout 0.5.0
+    git checkout v0.6.0
 
 The repo includes `daml/PingPong.daml`, which is the source for a DAML module with two templates: `Ping` and `Pong`. The app uses these.
+
+[Back to the table of contents](#table-of-contents)
+
+## Compile the DAML code
+
+Before getting started, build the DAML code with
+
+    daml build
 
 [Back to the table of contents](#table-of-contents)
 
@@ -45,11 +63,12 @@ The repo includes `daml/PingPong.daml`, which is the source for a DAML module wi
 
 Use the sandbox to run and test your application.
 
-Now that you created the project and you're in its directory, start the sandbox by running:
+Now that you created the project and you're in its directory:
 
-    da sandbox
+1. open a new shell (the running sandbox will keep it busy), and
+2. start the sandbox by running
 
-Starting the sandbox automatically compiles `PingPong.daml` and loads it.
+       daml sandbox dist/ex-tutorial-nodejs.dar
 
 [Back to the table of contents](#table-of-contents)
 
@@ -59,15 +78,15 @@ You are now set to write your own application. The template includes a skeleton 
 
 1. Install the dependencies for your package (including the bindings):
 
-    npm install
+       npm install
 
 2. Start the application:
 
-    npm start
+       npm start
 
 3. Verify the output is correct
 
-    hello from <LEDGER_ID>
+       hello from <LEDGER_ID>
 
 [Back to the table of contents](#table-of-contents)
 
@@ -77,24 +96,28 @@ The code for the script you just ran is `index.js`.
 
 Let's go through the skeleton part by part to understand what's going on:
 
-    const daml = require('@da/daml-ledger');
+    const ledger = require('@digital-asset/daml-ledger');
+
+    const daml = ledger.daml;
 
     const uuidv4 = require('uuid/v4');
 
 The first line loads the bindings and allows you to refer to them through the `daml` object.
 
-The second one introduces a dependency that is going to be later used to generate unique identifiers; no need to worry about it now.
+The second one creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express DAML values in your code concisely.
+
+The third one introduces a dependency that is going to be later used to generate unique identifiers; no need to worry about it now.
 
     let [, , host, port] = process.argv;
 
     host = host || 'localhost';
-    port = port || 7600;
+    port = port || 6865;
 
 These lines read the command-line arguments and provide some sensible defaults.
 
 Now to the juicy part:
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
         console.log('hello from', client.ledgerId);
     });
@@ -134,17 +157,17 @@ It's time to write some code to verify that you're good to go. Open the `index.j
 
 First of all, right after the first `require` statement, add a new one to load the `template-ids.json` file that has just been created.
 
-    const daml = require('@digitalasset/daml-ledger');
+    const ledger = require('@digitalasset/daml-ledger');
     const templateIds = require('./template-ids.json');
 
 Right beneath that line, initialize two constants to hold the `Ping` and `Pong` template identifiers:
 
-    const PING = templateIds['PingPong.Ping'];
-    const PONG = templateIds['PingPong.Pong'];
+    const PING = templateIds['PingPong:Ping'];
+    const PONG = templateIds['PingPong:Pong'];
 
 Finally print the template identifiers:
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
         console.log('hello from', client.ledgerId);
         console.log('Ping', PING);
@@ -189,7 +212,7 @@ Read those from the command line by editing the part where the arguments are rea
 
     let [, , sender, receiver, host, port] = process.argv;
     host = host || 'localhost';
-    port = port || 7600;
+    port = port || 6865;
     if (!sender || !receiver) {
         console.log('Missing sender and/or receiver arguments, exiting.');
         process.exit(-1);
@@ -226,9 +249,9 @@ First of all, the following is the `request` for the `CommandService`. Have a lo
                 templateId: PING,
                 arguments: {
                     fields: {
-                        sender: { valueType: 'party', party: sender },
-                        receiver: { valueType: 'party', party: receiver },
-                        count: { valueType: 'int64', int64: '0' }
+                        sender: daml.party(sender),
+                        receiver: daml.party(receiver),
+                        count: daml.int64(0)
                     }
                 }
             }]
@@ -264,7 +287,7 @@ This is already a sizeable chunk of code that performs a clearly defined task. W
 
 The code should now look like the following:
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
 
         createFirstPing();
@@ -283,9 +306,9 @@ The code should now look like the following:
                         templateId: PING,
                         arguments: {
                             fields: {
-                                sender: { valueType: 'party', party: sender },
-                                receiver: { valueType: 'party', party: receiver },
-                                count: { valueType: 'int64', int64: '0' }
+                                sender: daml.party(sender),
+                                receiver: daml.party(receiver),
+                                count: daml.int64(0)
                             }
                         }
                     }]
@@ -322,7 +345,7 @@ This method takes the following request:
     const filtersByParty = {};
     filtersByParty[sender] = { inclusive: { templateIds: [PING, PONG] } };
     const request = {
-        begin: { boundary: da.LedgerOffset.Boundary.END },
+        begin: { boundary: ledger.LedgerOffsetBoundaryValue.BEGIN },
         filter: { filtersByParty: filtersByParty }
     };
 
@@ -365,7 +388,7 @@ Wrap this code in a new function called `listenForTransactions`, place it within
 
 When you are done, your code should look like the following:
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
 
         listenForTransactions();
@@ -385,9 +408,9 @@ When you are done, your code should look like the following:
                         templateId: PING,
                         arguments: {
                             fields: {
-                                sender: { valueType: 'party', party: sender },
-                                receiver: { valueType: 'party', party: receiver },
-                                count: { valueType: 'int64', int64: '0' }
+                                sender: daml.party(sender),
+                                receiver: daml.party(receiver),
+                                count: daml.int64(0)
                             }
                         }
                     }]
@@ -404,7 +427,7 @@ When you are done, your code should look like the following:
             const filtersByParty = {};
             filtersByParty[sender] = { inclusive: { templateIds: [PING, PONG] } };
             const request = {
-                begin: { offsetType: 'boundary', boundary: daml.LedgerOffsetBoundaryValue.END },
+                begin: { offsetType: 'boundary', boundary: ledger.LedgerOffsetBoundaryValue.BEGIN },
                 filter: { filtersByParty: filtersByParty }
             };
             const transactions = client.transactionClient.getTransactions(request);
@@ -476,7 +499,7 @@ The following snippet of code does precisely this.
                 templateId: templateId,
                 contractId: contractId,
                 choice: reaction,
-                argument: { valueType: 'record', fields: {} }
+                argument: daml.record({})
             });
         }
     }
@@ -509,9 +532,11 @@ Wrap this code into a new function `react` that takes a `workflowId` and an `eve
 
 Finally, pass the `react` function as a parameter to the only call of `listenForTransactions`.
 
+The app is almost ready to start, there's only one tweak to make: before writing the code to react to transactions, in order for us to observe the transactions while running a single application, the code you wrote subscribed to the ledger from it's beginning (`LedgerOffsetBoundaryValue.BEGIN`). The next time you'll run the application you'll instead _tail_ the ledger subscribing to the end of if (`LedgerOffsetBoundaryValue.END`) so that you can only observe the live interaction between two running applications.
+
 Your code should now look like the following:
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
 
         listenForTransactions(react);
@@ -531,9 +556,9 @@ Your code should now look like the following:
                         templateId: PING,
                         arguments: {
                             fields: {
-                                sender: { valueType: 'party', party: sender },
-                                receiver: { valueType: 'party', party: receiver },
-                                count: { valueType: 'int64', int64: '0' }
+                                sender: daml.party(sender),
+                                receiver: daml.party(receiver),
+                                count: daml.int64(0)
                             }
                         }
                     }]
@@ -550,7 +575,7 @@ Your code should now look like the following:
             const filtersByParty = {};
             filtersByParty[sender] = { inclusive: { templateIds: [PING, PONG] } };
             const request = {
-                begin: { offsetType: 'boundary', boundary: daml.LedgerOffsetBoundaryValue.END },
+                begin: { offsetType: 'boundary', boundary: ledger.LedgerOffsetBoundaryValue.END },
                 filter: { filtersByParty: filtersByParty }
             };
             const transactions = client.transactionClient.getTransactions(request);
@@ -588,7 +613,7 @@ Your code should now look like the following:
                         templateId: templateId,
                         contractId: contractId,
                         choice: reaction,
-                        argument: { valueType: 'record', fields: {} }
+                        argument: daml.record({})
                     });
                 }
             }
@@ -694,23 +719,25 @@ In this new example the application first processes the current active contracts
 
 Note that the transaction filter was factored out as it can be shared. The final code would look like this:
 
-    const daml = require('@digitalasset/daml-ledger');
+    const ledger = require('@digitalasset/daml-ledger');
     const templateIds = require('./template-ids.json');
 
-    const PING = templateIds['PingPong.Ping'];
-    const PONG = templateIds['PingPong.Pong'];
+    const PING = templateIds['PingPong:Ping'];
+    const PONG = templateIds['PingPong:Pong'];
+
+    const daml = ledger.daml;
 
     const uuidv4 = require('uuid/v4');
 
     let [, , sender, receiver, host, port] = process.argv;
     host = host || 'localhost';
-    port = port || 7600;
+    port = port || 6865;
     if (!sender || !receiver) {
         console.log('Missing sender and/or receiver arguments, exiting.');
         process.exit(-1);
     }
 
-    daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+    ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         if (error) throw error;
 
         const filtersByParty = {};
@@ -736,9 +763,9 @@ Note that the transaction filter was factored out as it can be shared. The final
                         templateId: PING,
                         arguments: {
                             fields: {
-                                sender: { valueType: 'party', party: sender },
-                                receiver: { valueType: 'party', party: receiver },
-                                count: { valueType: 'int64', int64: '0' }
+                                sender: daml.party(sender),
+                                receiver: daml.party(receiver),
+                                count: daml.int64(0)
                             }
                         }
                     }]
@@ -753,7 +780,7 @@ Note that the transaction filter was factored out as it can be shared. The final
         function listenForTransactions(offset, transactionFilter, callback) {
             console.log(`${sender} starts reading transactions from offset: ${offset}.`);
             const request = {
-                begin: { offsetType: 'boundary', boundary: daml.LedgerOffsetBoundaryValue.END },
+                begin: { offsetType: 'boundary', boundary: ledger.LedgerOffsetBoundaryValue.END },
                 filter: transactionFilter
             };
             const transactions = client.transactionClient.getTransactions(request);
@@ -845,10 +872,13 @@ Note that the transaction filter was factored out as it can be shared. The final
 
     });
 
-Before running this you should start with a clean ledger to avoid being confused by the unprocessed contracts from previous examples.
+Before running this you should start with a clean ledger to avoid being confused by the unprocessed contracts from previous examples:
 
-    da stop
-    da sandbox
+1. go to the shell where you are running the sandbox
+2. hit CTRL+C to shut it down and wait for your shell prompt
+3. restart the sandbox
+
+       daml sandbox dist/ex-tutorial-nodejs.dar
 
 Then run:
 
@@ -879,3 +909,5 @@ You should see the following outputs respectively:
     Bob (workflow Ping-Bob): Ping at count 3
 
 Alice joining an empty ledger has no active contracts to process. Bob however, who joins later, will see Alice's `Ping` contract and process it. Afterwards he will continue listening to transactions from offset 1.
+
+[Back to the table of contents](#table-of-contents)

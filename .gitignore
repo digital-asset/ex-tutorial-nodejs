@@ -4,3 +4,9 @@ target/
 logs/
 *.log
 template-ids.json
+.package-database
+daml/PingPong.hi
+dist
+.idea
+.*.swp
+.interfaces

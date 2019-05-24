@@ -1,0 +1,12 @@
+sdk-version: 0.12.20
+name: ex-tutorial-nodejs
+source: daml/PingPong.daml
+parties:
+- Alice
+- Bob
+exposed-modules:
+- PingPong
+version: '0.6.0'
+dependencies:
+- daml-prim
+- daml-stdlib

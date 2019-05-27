@@ -469,10 +469,31 @@ You should see an output like the following:
 
     Alice starts reading transactions.
     Created Ping contract from Alice to Bob.
+    Transaction read: 0
     Transaction read: 1
 
+Note that the exact number of transactions read depends on whether you have already ran the application and created contracts more then once.
+
 Your application is now able to create contracts and listen to transactions on the ledger. Very good!
+
 You can now hit CTRL-C to quit the application.
+
+---
+
+### Note
+
+#### Start from a clean slate
+
+It's not a requirement for this tutorial, but if you want to reset the sandbox to its initial state, do the following:
+
+1. Go to the console where the sandbox is running
+2. Hit CTRL+C to stop it
+3. Run it again as you did before
+
+       daml sandbox dist/ex-tutorial-nodejs.dar
+
+---
+
 
 [Back to the table of contents](#table-of-contents)
 

@@ -218,7 +218,9 @@ Read those from the command line by editing the part where the arguments are rea
 
 Try to run it without arguments (or with just one) to see the error popping up.
 
-Try to run it with both arguments to see the application working just as it did before.
+Try to run it with both arguments to see the application working just as it did before, as follows:
+
+    npm start Alice Bob
 
 [Back to the table of contents](#table-of-contents)
 

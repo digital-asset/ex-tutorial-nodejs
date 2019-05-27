@@ -29,7 +29,7 @@ daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
                     const moduleName = damlModule.getName().getSegmentsList().join('.');
                     for (const template of damlModule.getTemplatesList()) {
                         const templateName = template.getTycon().getSegmentsList().join('.');
-                        const name = `${moduleName}.${templateName}`;
+                        const name = `${moduleName}:${templateName}`;
                         writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
                             packageId: packageId,
                             moduleName: moduleName,
@@ -45,7 +45,7 @@ daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
 
 function printUsageAndExit() {
     console.log('Usage: [-h/--host LEDGER_HOST] [-p/--port LEDGER_PORT] [-o/--out OUT_FILE]');
-    console.log('Defaults to [host: localhost, port: 7600, out: stdout]');
+    console.log('Defaults to [host: localhost, port: 6865, out: stdout]');
     process.exit(-1);
 }
 
@@ -75,5 +75,5 @@ function readOptions() {
             printUsageAndExit();
         }
     }
-    return [host || 'localhost', port || 7600, out];
+    return [host || 'localhost', port || 6865, out];
 }

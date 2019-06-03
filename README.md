@@ -45,7 +45,7 @@ To set it up, clone the repo, making sure to checkout the tag corresponding to t
 
     git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
     cd ex-tutorial-nodejs
-    git checkout v0.6.0
+    git checkout v0.6.1
 
 The repo includes `daml/PingPong.daml`, which is the source for a DAML module with two templates: `Ping` and `Pong`. The app uses these.
 

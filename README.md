@@ -31,9 +31,7 @@ The focus is not on the complexity of the model, but rather on how to use the bi
 
 ## Prerequisites
 
-The DAML code in this repository makes use of the SDK 0.12.20 and the `daml` SDK assistant.
-
-Make sure you have the SDK 0.12.20 (or greater) installed.
+Make sure you have the DAML SDK installed and that the version matches the one in this project's `daml.yaml`.
 
 [Back to the table of contents](#table-of-contents)
 
@@ -45,7 +43,6 @@ To set it up, clone the repo, making sure to checkout the tag corresponding to t
 
     git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
     cd ex-tutorial-nodejs
-    git checkout v0.6.1
 
 The repo includes `daml/PingPong.daml`, which is the source for a DAML module with two templates: `Ping` and `Pong`. The app uses these.
 

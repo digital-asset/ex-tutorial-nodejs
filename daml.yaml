@@ -6,9 +6,7 @@ parties:
 - Bob
 exposed-modules:
 - PingPong
-version: '0.9.0'
+version: '0.9.1'
 dependencies:
 - daml-prim
 - daml-stdlib
-build-options:
-- --target=1.6

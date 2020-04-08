@@ -16,7 +16,37 @@ process.on('beforeExit', () => {
     }
 });
 
-daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
+function getTemplateIds(archivePayload) {
+    const templateNames = [];
+    const archive = daml.lf.ArchivePayload.deserializeBinary(archivePayload).getDamlLf1();
+    for (const damlModule of archive.getModulesList()) {
+        if (damlModule.hasNameDname()) {
+            const moduleName = damlModule.getNameDname().getSegmentsList().join('.');
+            for (const template of damlModule.getTemplatesList()) {
+                const templateName = template.getTyconDname().getSegmentsList().join('.');
+                templateNames.push({moduleName: moduleName, entityName: templateName});
+            }
+        } else if (damlModule.hasNameInternedDname()) {
+            const internedDottedNames = archive.getInternedDottedNamesList();
+            const internedStrings = archive.getInternedStringsList();
+            const i = damlModule.getNameInternedDname();
+            const moduleName = internedDottedNames[i].getSegmentsInternedStrList().map(j => internedStrings[j]).join('.');
+            for (const template of damlModule.getTemplatesList()) {
+                const k = template.getTyconInternedDname();
+                const templateName = internedDottedNames[k].getSegmentsInternedStrList().map(l => internedStrings[l]).join('.');
+                templateNames.push({moduleName: moduleName, entityName: templateName});
+            }
+        }
+    }
+    return templateNames;
+}
+
+// This allows to download packages smaller than 50MB (after compression)
+// Raise this if your packages is larger than this size
+const grpcOptions = {
+    'grpc.max_receive_message_length': 50 * 1024 * 1024
+};
+daml.DamlLedgerClient.connect({ host: host, port: port, grpcOptions: grpcOptions }, (error, client) => {
     if (error) throw error;
     let first = true;
     client.packageClient.listPackages((error, response) => {
@@ -24,19 +54,15 @@ daml.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
         for (const packageId of response.packageIds) {
             client.packageClient.getPackage(packageId, (error, response) => {
                 if (error) throw error;
-                const payload = daml.lf.ArchivePayload.deserializeBinary(response.archivePayload);
-                for (const damlModule of payload.getDamlLf1().getModulesList()) {
-                    const moduleName = damlModule.getName().getSegmentsList().join('.');
-                    for (const template of damlModule.getTemplatesList()) {
-                        const templateName = template.getTycon().getSegmentsList().join('.');
-                        const name = `${moduleName}:${templateName}`;
-                        writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
-                            packageId: packageId,
-                            moduleName: moduleName,
-                            entityName: templateName
-                        })}`);
-                        first = false;
-                    }
+                const templateNames = getTemplateIds(response.archivePayload);
+                for (const {moduleName, entityName} of templateNames) {
+                    const name = `${moduleName}:${entityName}`;
+                    writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
+                        packageId: packageId,
+                        moduleName: moduleName,
+                        entityName: entityName
+                    })}`);
+                    first = false;
                 }
             });
         }

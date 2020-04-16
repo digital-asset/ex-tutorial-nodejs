@@ -4,7 +4,7 @@
   "description": "An interactive tutorial to get started with the Node.js bindings for DAML",
   "main": "index.js",
   "dependencies": {
-    "@digitalasset/daml-ledger": "0.9.1",
+    "@digitalasset/daml-ledger": "0.10.0",
     "uuid": "3.3.2"
   },
   "scripts": {

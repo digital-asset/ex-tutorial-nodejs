@@ -4,8 +4,6 @@ source: daml/PingPong.daml
 parties:
 - Alice
 - Bob
-exposed-modules:
-- PingPong
 version: '0.10.0'
 dependencies:
 - daml-prim

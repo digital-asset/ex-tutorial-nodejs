@@ -63,7 +63,7 @@ Use the sandbox to run and test your application:
 1. open a new shell (the running sandbox will keep it busy), and
 2. start the sandbox by running
 
-       daml sandbox dist/ex-tutorial-nodejs.dar
+       daml sandbox .daml/dist/ex-tutorial-nodejs-0.10.0.dar
 
 [Back to the table of contents](#table-of-contents)
 
@@ -238,8 +238,6 @@ First of all, the following is the `request` for the `CommandService`. Have a lo
             applicationId: 'PingPongApp',
             workflowId: `Ping-${sender}`,
             commandId: uuidv4(),
-            ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-            maximumRecordTime: { seconds: 5, nanoseconds: 0 },
             party: sender,
             list: [{
                 commandType: 'create',
@@ -260,8 +258,6 @@ This object represents the submission of a set of commands to be applied atomica
 - `applicationId`: the name of your application
 - `workflowId`: an (optional) identifier you can use to group together commands pertaining to one of your workflows
 - `commandId`: a unique identifier for the set of submitted commands
-- `ledgerEffectiveTime`: the time at which the set of submitted commands are applied; normally the client's current epoch time, but, since the sandbox (by default) runs with a static time fixed at epoch 0, use this value
-- `maximumRecordTime`: the time at which the command is considered expired if it's not been applied yet; the difference with the `maximumRecordTime` is the time-to-live (TTL) of the command
 - `party`: who's submitting the command
 
 Finally, `list` contains all the commands to be applied. In this case, it submits a `create` command.
@@ -295,8 +291,6 @@ The code should now look like the following:
                     applicationId: 'PingPongApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
-                    ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                    maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                     party: sender,
                     list: [{
                         commandType: 'create',
@@ -407,8 +401,6 @@ When you are done, your code should look like the following:
                     applicationId: 'PingPongApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
-                    ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                    maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                     party: sender,
                     list: [{
                         commandType: 'create',
@@ -487,7 +479,7 @@ It's not a requirement for this tutorial, but if you want to reset the sandbox t
 2. Hit CTRL+C to stop it
 3. Run it again as you did before
 
-       daml sandbox dist/ex-tutorial-nodejs.dar
+       daml sandbox .daml/dist/ex-tutorial-nodejs-0.10.0.dar
 
 ---
 
@@ -540,8 +532,6 @@ You can now use the `submitAndWait` command to send the `reactions` to the ledge
                 applicationId: 'PingPongApp',
                 workflowId: workflowId,
                 commandId: uuidv4(),
-                ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                 party: sender,
                 list: reactions
             }
@@ -576,8 +566,6 @@ Review the code before running the application. Your code should now look like t
                     applicationId: 'PingPongApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
-                    ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                    maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                     party: sender,
                     list: [{
                         commandType: 'create',
@@ -651,8 +639,6 @@ Review the code before running the application. Your code should now look like t
                         applicationId: 'PingPongApp',
                         workflowId: workflowId,
                         commandId: uuidv4(),
-                        ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                        maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                         party: sender,
                         list: reactions
                     }
@@ -783,8 +769,6 @@ Note that the transaction filter was factored out as it can be shared. The final
                     applicationId: 'PingPongApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
-                    ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                    maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                     party: sender,
                     list: [{
                         commandType: 'create',
@@ -886,8 +870,6 @@ Note that the transaction filter was factored out as it can be shared. The final
                         applicationId: 'PingPongApp',
                         workflowId: workflowId,
                         commandId: uuidv4(),
-                        ledgerEffectiveTime: { seconds: 0, nanoseconds: 0 },
-                        maximumRecordTime: { seconds: 5, nanoseconds: 0 },
                         party: sender,
                         list: reactions
                     }
@@ -906,7 +888,7 @@ Before running the application, start with a clean ledger to avoid receiving unp
 2. hit CTRL+C to shut it down and wait for your shell prompt
 3. restart the sandbox
 
-       daml sandbox dist/ex-tutorial-nodejs.dar
+       daml sandbox .daml/dist/ex-tutorial-nodejs-0.10.0.dar
 
 Then run:
 

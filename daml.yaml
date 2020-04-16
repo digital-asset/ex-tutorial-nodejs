@@ -1,4 +1,4 @@
-sdk-version: 0.13.55
+sdk-version: 1.0.0
 name: ex-tutorial-nodejs
 source: daml/PingPong.daml
 parties:
@@ -6,7 +6,7 @@ parties:
 - Bob
 exposed-modules:
 - PingPong
-version: '0.9.1'
+version: '0.10.0'
 dependencies:
 - daml-prim
 - daml-stdlib

@@ -336,7 +336,7 @@ This method takes the following request:
     const filtersByParty = {};
     filtersByParty[sender] = { inclusive: { templateIds: [PING, PONG] } };
     const request = {
-        begin: { boundary: ledger.LedgerOffsetBoundaryValue.BEGIN },
+        begin: { offsetType: 'boundary', boundary: ledger.LedgerOffsetBoundaryValue.BEGIN },
         filter: { filtersByParty: filtersByParty }
     };
 

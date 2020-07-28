@@ -91,7 +91,7 @@ The code for the script you just ran is `index.js`.
 
 Let's go through the skeleton part by part to understand what's going on:
 
-    const ledger = require('@digital-asset/daml-ledger');
+    const ledger = require('@digitalasset/daml-ledger');
 
     const daml = ledger.daml;
 

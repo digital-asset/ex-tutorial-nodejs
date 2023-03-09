@@ -40,8 +40,8 @@ There is a skeleton application called `ex-tutorial-nodejs` that you can get fro
 
 To set it up, clone the repo, making sure to checkout the tag corresponding to the Node.js bindings version you are using:
 
-    git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
-    cd ex-tutorial-nodejs
+    $ git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
+    $ cd ex-tutorial-nodejs
 
 The repo includes `daml/PingPongGame.daml`, which is the source for a Daml module with two templates: `Ping` and `Pong`. The app uses these.
 
@@ -51,18 +51,17 @@ The repo includes `daml/PingPongGame.daml`, which is the source for a Daml modul
 
 Before getting started, move to the project root directory and build the Daml code with
 
-    daml build
+    $ daml build
 
 [Back to the table of contents](#table-of-contents)
 
 ## Run the sandbox
 
-Use the sandbox to run and test your application:
+Use the sandbox to run and test your application.
+Open a new shell (the running sandbox will keep it busy), and
+start the sandbox by running
 
-1. open a new shell (the running sandbox will keep it busy), and
-2. start the sandbox by running
-
-       daml sandbox .daml/dist/ex-tutorial-nodejs-0.10.0.dar
+    $ daml start
 
 [Back to the table of contents](#table-of-contents)
 

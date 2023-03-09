@@ -1,6 +1,6 @@
 sdk-version: 2.5.5
 name: ex-tutorial-nodejs
-source: daml/PingPong.daml
+source: daml/PingPongGame.daml
 parties:
 - Alice
 - Bob

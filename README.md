@@ -10,7 +10,7 @@
 6.  [Run the skeleton app](#run-the-skeleton-app)
 7.  [Understand the skelelon](#understand-the-skeleton)
 8.  [Retrieve the package identifiers](#retrieve-the-package-identifiers)
-9.  [Understand the `PingPong` module](#understand-the-pingpong-module)
+9.  [Understand the `PingPongGame` module](#understand-the-pingpong-module)
 10. [Pass the parties as parameters](#pass-the-parties-as-parameters)
 11. [Create a contract](#create-a-contract)
 12. [Read the transactions](#read-the-transactions)
@@ -43,7 +43,7 @@ To set it up, clone the repo, making sure to checkout the tag corresponding to t
     git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
     cd ex-tutorial-nodejs
 
-The repo includes `daml/PingPong.daml`, which is the source for a Daml module with two templates: `Ping` and `Pong`. The app uses these.
+The repo includes `daml/PingPongGame.daml`, which is the source for a Daml module with two templates: `Ping` and `Pong`. The app uses these.
 
 [Back to the table of contents](#table-of-contents)
 
@@ -135,7 +135,7 @@ The skeleton application just prints the greeting message with the ledger identi
 
 ## Retrieve the package identifiers
 
-Now that the sandbox is running, the `PingPong.daml` file has been compiled and the module loaded onto the ledger.
+Now that the sandbox is running, the `PingPongGame.daml` file has been compiled and the module loaded onto the ledger.
 
 In order for you to refer to the templates therein you need its package identifier.
 
@@ -156,8 +156,8 @@ First of all, right after the first `require` statement, add a new one to load t
 
 Right beneath that line, initialize two constants to hold the `Ping` and `Pong` template identifiers:
 
-    const PING = templateIds['PingPong:Ping'];
-    const PONG = templateIds['PingPong:Pong'];
+    const PING = templateIds['PingPongGame:Ping'];
+    const PONG = templateIds['PingPongGame:Pong'];
 
 Finally print the template identifiers:
 
@@ -173,18 +173,18 @@ Run the application again (`npm start`) to see an output like the following:
     hello from sandbox-3957952d-f475-4d2f-be89-245a0799d2c0
     Ping { packageId:
        '33f8c3ee29d1e358e1c5b321eab7158af0220a6b956f69528da89c3eeb06d736',
-      moduleName: 'PingPong',
+      moduleName: 'PingPongGame',
       entityName: 'Ping' }
     Pong { packageId:
        '33f8c3ee29d1e358e1c5b321eab7158af0220a6b956f69528da89c3eeb06d736',
-      moduleName: 'PingPong',
+      moduleName: 'PingPongGame',
       entityName: 'Pong' }
 
 [Back to the table of contents](#table-of-contents)
 
-## Understand the `PingPong` module
+## Understand the `PingPongGame` module
 
-Before moving on to the implementation of the application, have a look at `daml/PingPong.daml` to understand the module the app uses.
+Before moving on to the implementation of the application, have a look at `daml/PingPongGame.daml` to understand the module the app uses.
 
 `Ping` and `Pong` are almost identical. Looking at them in detail:
 
@@ -234,7 +234,7 @@ First of all, the following is the `request` for the `CommandService`. Have a lo
 
     const request = {
         commands: {
-            applicationId: 'PingPongApp',
+            applicationId: 'PingPongGameApp',
             workflowId: `Ping-${sender}`,
             commandId: uuidv4(),
             party: sender,
@@ -266,7 +266,7 @@ Have a look at the only command:
 - `templateId`: the identifier of the template of the contract you wish to create (`Ping`)
 - `arguments`: an object containing the `fields` necessary to create the contract
 
-The keys of the `fields` object are the template parameter names as they appear on `daml/PingPong.daml`, while the values are an object indicating the type of the parameter and its actual value.
+The keys of the `fields` object are the template parameter names as they appear on `daml/PingPongGame.daml`, while the values are an object indicating the type of the parameter and its actual value.
 
 The request can now be passed to the `CommandService` as follows:
 
@@ -287,7 +287,7 @@ The code should now look like the following:
         function createFirstPing() {
             const request = {
                 commands: {
-                    applicationId: 'PingPongApp',
+                    applicationId: 'PingPongGameApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
                     party: sender,
@@ -397,7 +397,7 @@ When you are done, your code should look like the following:
         function createFirstPing() {
             const request = {
                 commands: {
-                    applicationId: 'PingPongApp',
+                    applicationId: 'PingPongGameApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
                     party: sender,
@@ -528,7 +528,7 @@ You can now use the `submitAndWait` command to send the `reactions` to the ledge
     if (reactions.length > 0) {
         const request = {
             commands: {
-                applicationId: 'PingPongApp',
+                applicationId: 'PingPongGameApp',
                 workflowId: workflowId,
                 commandId: uuidv4(),
                 party: sender,
@@ -562,7 +562,7 @@ Review the code before running the application. Your code should now look like t
         function createFirstPing() {
             const request = {
                 commands: {
-                    applicationId: 'PingPongApp',
+                    applicationId: 'PingPongGameApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
                     party: sender,
@@ -635,7 +635,7 @@ Review the code before running the application. Your code should now look like t
             if (reactions.length > 0) {
                 const request = {
                     commands: {
-                        applicationId: 'PingPongApp',
+                        applicationId: 'PingPongGameApp',
                         workflowId: workflowId,
                         commandId: uuidv4(),
                         party: sender,
@@ -735,8 +735,8 @@ Note that the transaction filter was factored out as it can be shared. The final
     const ledger = require('@digitalasset/daml-ledger');
     const templateIds = require('./template-ids.json');
 
-    const PING = templateIds['PingPong:Ping'];
-    const PONG = templateIds['PingPong:Pong'];
+    const PING = templateIds['PingPongGame:Ping'];
+    const PONG = templateIds['PingPongGame:Pong'];
 
     const daml = ledger.daml;
 
@@ -765,7 +765,7 @@ Note that the transaction filter was factored out as it can be shared. The final
         function createFirstPing() {
             const request = {
                 commands: {
-                    applicationId: 'PingPongApp',
+                    applicationId: 'PingPongGameApp',
                     workflowId: `Ping-${sender}`,
                     commandId: uuidv4(),
                     party: sender,
@@ -866,7 +866,7 @@ Note that the transaction filter was factored out as it can be shared. The final
             if (reactions.length > 0) {
                 const request = {
                     commands: {
-                        applicationId: 'PingPongApp',
+                        applicationId: 'PingPongGameApp',
                         workflowId: workflowId,
                         commandId: uuidv4(),
                         party: sender,

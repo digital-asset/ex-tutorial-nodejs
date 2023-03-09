@@ -9,7 +9,7 @@ const uuidv4 = require('uuid/v4');
 
 let [, , host, port] = process.argv;
 host = host || 'localhost';
-port = port || 6865;
+port = port || "6865";
 
 ledger.DamlLedgerClient.connect({ host: host, port: port }, (error, client) => {
     if (error) throw error;

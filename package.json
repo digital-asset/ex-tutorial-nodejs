@@ -8,7 +8,7 @@
     "uuid": "3.3.2"
   },
   "scripts": {
-    "start": "node ./index.js",
+    "start": "node ./index.ts",
     "fetch-template-ids": "rm -f ./template-ids.json && node ./util/fetch-template-ids.js -o ./template-ids.json"
   },
   "repository": {
@@ -36,5 +36,8 @@
   "bugs": {
     "url": "https://github.com/digital-asset/ex-tutorial-nodejs/issues"
   },
-  "homepage": "https://github.com/digital-asset/ex-tutorial-nodejs#readme"
+  "homepage": "https://github.com/digital-asset/ex-tutorial-nodejs#readme",
+  "devDependencies": {
+    "@types/node": "^18.15.0"
+  }
 }

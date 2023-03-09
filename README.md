@@ -79,13 +79,13 @@ You are now set to write your own application. The template includes a skeleton 
 
 3. Verify the output is correct
 
-       hello from <LEDGER_ID>
+       hello from sandbox
 
 [Back to the table of contents](#table-of-contents)
 
 ## Understand the skeleton
 
-The code for the script you just ran is `index.js`.
+The code for the script you just ran is `index.ts`.
 
 Let's go through the skeleton part by part to understand what's going on:
 

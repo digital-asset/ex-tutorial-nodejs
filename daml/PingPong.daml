@@ -1,7 +1,6 @@
 -- Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 -- SPDX-License-Identifier: Apache-2.0
 
-daml 1.2
 module PingPong where
 
 template Ping
@@ -13,13 +12,13 @@ template Ping
     signatory sender
     observer receiver
 
-    controller receiver can
-      ReplyPong : ()
-        do
-          if count >= 3 then return ()
-          else do
-            create Pong with sender = receiver; receiver = sender; count = count + 1
-            return ()
+    choice ReplyPong : ()
+      controller receiver
+      do
+        if count >= 3 then return ()
+        else do
+          create Pong with sender = receiver; receiver = sender; count = count + 1
+          return ()
 
 template Pong
   with
@@ -30,10 +29,10 @@ template Pong
     signatory sender
     observer receiver
 
-    controller receiver can
-      ReplyPing : ()
-        do
-          if count >= 3 then return ()
-          else do
-            create Ping with sender = receiver; receiver = sender; count = count + 1
-            return ()
+    choice ReplyPing : ()
+      controller receiver
+      do
+        if count >= 3 then return ()
+        else do
+          create Ping with sender = receiver; receiver = sender; count = count + 1
+          return ()

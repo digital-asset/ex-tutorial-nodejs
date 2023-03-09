@@ -1,4 +1,4 @@
-sdk-version: 1.4.0
+sdk-version: 2.5.5
 name: ex-tutorial-nodejs
 source: daml/PingPong.daml
 parties:

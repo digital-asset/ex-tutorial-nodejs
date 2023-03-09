@@ -1,11 +1,11 @@
-# DAML Ledger API Node.js Bindings Tutorial
+# Daml Ledger API Node.js Bindings Tutorial
 
 ## Table of contents
 
 1.  [Introduction](#introduction)
 2.  [Prerequisites](#prerequisites)
 3.  [Create the project](#create-the-project)
-4.  [Compile the DAML Code](#compile-the-daml-code)
+4.  [Compile the Daml Code](#compile-the-daml-code)
 5.  [Run the sandbox](#run-the-sandbox)
 6.  [Run the skeleton app](#run-the-skeleton-app)
 7.  [Understand the skelelon](#understand-the-skeleton)
@@ -19,19 +19,18 @@
 
 ## Introduction
 
-This tutorial guides you through a series of steps to write a simple application using the [Node.js bindings](https://github.com/digital-asset/daml-js/) for [DAML](https://daml.com/).
+This tutorial guides you through a series of steps to write a simple
+[Daml](https://daml.com/) application interacting with a [Node](https://nodejs.org/en/) server
+directly via gRPC bindings.
 
-The purpose is to learn the basics of how to use them.
-
-The task is to build an application able to send and receive "ping" messages.
-
+The task is to build an application able to send and receive Ping & Pong messages.
 The focus is not on the complexity of the model, but rather on how to use the bindings to interact with the ledger.
 
 [Back to the table of contents](#table-of-contents)
 
 ## Prerequisites
 
-Make sure you have the DAML SDK installed and that the version matches the one in this project's `daml.yaml`.
+Make sure you have the Daml SDK installed and that the version matches the one in this project's `daml.yaml`.
 
 [Back to the table of contents](#table-of-contents)
 
@@ -44,13 +43,13 @@ To set it up, clone the repo, making sure to checkout the tag corresponding to t
     git clone git@github.com:digital-asset/ex-tutorial-nodejs.git
     cd ex-tutorial-nodejs
 
-The repo includes `daml/PingPong.daml`, which is the source for a DAML module with two templates: `Ping` and `Pong`. The app uses these.
+The repo includes `daml/PingPong.daml`, which is the source for a Daml module with two templates: `Ping` and `Pong`. The app uses these.
 
 [Back to the table of contents](#table-of-contents)
 
-## Compile the DAML code
+## Compile the Daml code
 
-Before getting started, move to the project root directory and build the DAML code with
+Before getting started, move to the project root directory and build the Daml code with
 
     daml build
 
@@ -99,7 +98,7 @@ Let's go through the skeleton part by part to understand what's going on:
 
 The first line loads the bindings and allows you to refer to them through the `ledger` object.
 
-The second line creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express DAML values in your code concisely.
+The second line creates a shorthand for the `daml` object in the `daml-ledger` library, that can be used to express Daml values in your code concisely.
 
 The third line introduces a dependency that is going to be later used to generate unique identifiers; no need to worry about it now.
 
@@ -119,7 +118,7 @@ Now to the juicy part:
 
 Here the application connects to the ledger with the `DamlLedgerClient.connect` method.
 
-It accepts two arguments: 
+It accepts two arguments:
 
 - an object with the connection options
 - a callback to be invoked when the connection either fails or succeeds
@@ -698,7 +697,7 @@ You could address this problem by listening for transactions from the beginning,
 
 To handle this use case the API has a service which returns the set of active contracts on the ledger and the absolute office from which start to listen for live transactions.
 
-In this new example the application first processes the current active contracts. Since that process is asynchronous the rest of the program should be passed in as a callback. 
+In this new example the application first processes the current active contracts. Since that process is asynchronous the rest of the program should be passed in as a callback.
 
     function processActiveContracts(transactionFilter, callback, onComplete) {
         const request = { filter: transactionFilter };
@@ -714,18 +713,18 @@ In this new example the application first processes the current active contracts
                 if (events.length > 0) {
                     callback(response.workflowId, events);
                 }
-            }          
-           
+            }
+
             if (response.offset) {
                 offset = response.offset;
             }
-        });    
+        });
 
         activeContracts.on('error', error => {
             console.error(`${sender} encountered an error while processing active contracts!`);
             console.error(error);
             process.exit(-1);
-        });    
+        });
 
         activeContracts.on('end', () => onComplete(offset));
     }

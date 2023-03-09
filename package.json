@@ -1,7 +1,7 @@
 {
   "name": "ex-tutorial-nodejs",
   "version": "0.11.0",
-  "description": "An interactive tutorial to get started with the Node.js bindings for DAML",
+  "description": "An interactive tutorial to get started with the Daml and Node.js.",
   "main": "index.js",
   "dependencies": {
     "@digitalasset/daml-ledger": "0.11.0",

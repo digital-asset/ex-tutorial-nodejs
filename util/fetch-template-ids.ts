@@ -1,14 +1,17 @@
 // Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-const daml = require('@digitalasset/daml-ledger');
-const fs = require('fs');
+// const daml = require('@digitalasset/daml-ledger');
+import * as daml from '@digitalasset/daml-ledger';
+import fs from 'fs';
+import { Writable } from 'stream';
 
-const [host, port, out] = readOptions();
-const writer = out ? fs.createWriteStream(out) : process.stdout;
+
+const {host, port, out} = readOptions();
+const writer : Writable = out ? fs.createWriteStream(out) : process.stdout;
 
 writer.write('{');
-let closed = false;
+var closed = false;
 process.on('beforeExit', () => {
     if (!closed) {
         writer.write('}\n');
@@ -16,14 +19,15 @@ process.on('beforeExit', () => {
     }
 });
 
-function getTemplateIds(archivePayload) {
+function getTemplateIds(archivePayload : any) {
     const templateNames = [];
     const archive = daml.lf.ArchivePayload.deserializeBinary(archivePayload).getDamlLf1();
+    if (!archive) throw "No Archive";
     for (const damlModule of archive.getModulesList()) {
         if (damlModule.hasNameDname()) {
-            const moduleName = damlModule.getNameDname().getSegmentsList().join('.');
+            const moduleName = damlModule.getNameDname()?.getSegmentsList().join('.');
             for (const template of damlModule.getTemplatesList()) {
-                const templateName = template.getTyconDname().getSegmentsList().join('.');
+                const templateName = template.getTyconDname()?.getSegmentsList().join('.');
                 templateNames.push({moduleName: moduleName, entityName: templateName});
             }
         } else if (damlModule.hasNameInternedDname()) {
@@ -48,11 +52,14 @@ const grpcOptions = {
 };
 daml.DamlLedgerClient.connect({ host: host, port: port, grpcOptions: grpcOptions }, (error, client) => {
     if (error) throw error;
+    if (!client) throw "Undefined client";
     let first = true;
     client.packageClient.listPackages((error, response) => {
         if (error) throw error;
+        if (!response) throw "Undefined response";
         for (const packageId of response.packageIds) {
             client.packageClient.getPackage(packageId, (error, response) => {
+                if (!response) throw "Undefined response";
                 if (error) throw error;
                 const templateNames = getTemplateIds(response.archivePayload);
                 for (const {moduleName, entityName} of templateNames) {
@@ -76,10 +83,10 @@ function printUsageAndExit() {
 }
 
 function readOptions() {
-    let host = undefined;
-    let port = undefined;
-    let out = undefined;
-    for (let i = 2; i < process.argv.length; i += 2) {
+    var host = undefined;
+    var port = undefined;
+    var out = undefined;
+    for (let i = 2; i < process.argv.length; i += 2) {    // Since run from ts-node
         const option = process.argv[i];
         const argument = process.argv[i + 1];
         if (option === '-h' || option === '--host') {
@@ -91,7 +98,7 @@ function readOptions() {
             if (port !== undefined || argument === undefined) {
                 printUsageAndExit();
             }
-            port = argument;
+            port = parseInt(argument);
         } else if (option === '-o' || option === '--out') {
             if (out !== undefined || argument === undefined) {
                 printUsageAndExit();
@@ -101,5 +108,5 @@ function readOptions() {
             printUsageAndExit();
         }
     }
-    return [host || 'localhost', port || 6865, out];
+    return {host:host || 'localhost', port:port || 6865, out};
 }

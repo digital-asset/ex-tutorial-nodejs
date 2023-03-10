@@ -1,15 +1,16 @@
 {
   "name": "ex-tutorial-nodejs",
   "version": "0.11.0",
-  "description": "An interactive tutorial to get started with the Daml and Node.js.",
+  "description": "An interactive tutorial to get started with Daml and Node.js.",
   "main": "index.js",
   "dependencies": {
     "@digitalasset/daml-ledger": "0.11.0",
+    "ts-node": "^10.9.1",
     "uuid": "3.3.2"
   },
   "scripts": {
-    "start": "node ./index.ts",
-    "fetch-template-ids": "rm -f ./template-ids.json && node ./util/fetch-template-ids.js -o ./template-ids.json"
+    "start": "ts-node ./index.ts",
+    "fetch-template-ids": "rm -f ./template-ids.json && ts-node ./util/fetch-template-ids.ts -o ./template-ids.json"
   },
   "repository": {
     "type": "git",

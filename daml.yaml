@@ -1,10 +1,9 @@
 sdk-version: 2.5.5
 name: ex-tutorial-nodejs
 source: daml/PingPongGame.daml
-parties:
-- Alice
-- Bob
-version: '0.10.0'
+version: '0.11.0'
 dependencies:
-- daml-prim
-- daml-stdlib
+  - daml-prim
+  - daml-stdlib
+navigator-options:
+  - --feature-user-management=false

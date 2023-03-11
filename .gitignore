@@ -2,6 +2,7 @@ node_modules/
 target/
 .vscode/
 logs/
+log/
 *.log
 template-ids.json
 .package-database

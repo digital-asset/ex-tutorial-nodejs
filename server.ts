@@ -109,15 +109,21 @@ function processActiveContracts(client : LedgerClient,
 // To create commands against the ledger we need to construct commands.
 function createPing (client : LedgerClient) {
     const request = {
+        // A set of commands to be applied atomically
         commands: {
-            applicationId: 'PingPongGameApp',
-            workflowId: `Ping-${sender}`,
-            commandId: uuid(),
-            party: sender,
-            list: [{                     // Each request is made up of commands.
+            applicationId: 'PingPongGameApp',   //  the name of your application
+            workflowId: `Ping-${sender}`,    // an (optional) identifier you can
+                                             // use to group commands pertaining
+                                                     // to one of your workflows
+            commandId: uuid(),           // a unique identifier for the commands
+            party: sender,                      // who is submitting the command
+            list: [{                      // Each request is made up of commands
                 commandType: 'create' as const,
-                templateId: PING,                       // Reference a template.
-                arguments: {                             // Pass in the payload.
+
+                templateId: PING,       // the identifier of the template of the
+                                            // contract you wish to create Ping.
+                arguments: {                  // an object containing the fields
+                                             // necessary to create the contract
                     fields: {
                         sender: Daml.party(sender),
                         receiver: Daml.party(receiver),

@@ -4,8 +4,9 @@
   "description": "An interactive tutorial to get started with Daml and Node.js.",
   "main": "index.ts",
   "dependencies": {
-    "@digitalasset/daml-ledger": "0.11.0",
+    "@grpc/grpc-js": "^1.8.12",
     "ts-node": "^10.9.1",
+    "ts-protoc-gen": "^0.15.0",
     "uuid": "3.3.2"
   },
   "scripts": {

@@ -1,15 +1,21 @@
 // Copyright (c) 2019, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// const daml = require('@digitalasset/daml-ledger');
-import * as daml from '@digitalasset/daml-ledger';
+import { credentials, makeClientConstructor } from '@grpc/grpc-js';
+import * as packageService  from "../src/generated/com/daml/ledger/api/v1/package_service_grpc_pb";
+import { GetPackageRequest, ListPackagesRequest } from '../src/generated/com/daml/ledger/api/v1/package_service_pb';
+import { ArchivePayload } from '../src/generated/com/daml/daml_lf_1_14/daml_lf_pb';
+
+
 import fs from 'fs';
 import { Writable } from 'stream';
 
 
 const {host, port, out} = readOptions();
-const writer : Writable = out ? fs.createWriteStream(out) : process.stdout;
+const address = `${host}:${port}`;
+const channelCredential = credentials.createInsecure();
 
+const writer : Writable = out ? fs.createWriteStream(out) : process.stdout;
 writer.write('{');
 var closed = false;
 process.on('beforeExit', () => {
@@ -19,9 +25,43 @@ process.on('beforeExit', () => {
     }
 });
 
-function getTemplateIds(archivePayload : any) {
+// This allows to download packages smaller than 50MB (after compression)
+// Raise this if your packages is larger than this size
+const grpcOptions = {
+    'grpc.max_receive_message_length': 50 * 1024 * 1024
+};
+
+const packageServiceC = makeClientConstructor((packageService as any)['com.daml.ledger.api.v1.PackageService'], 'PackageService');
+const packageServiceClient =
+    new packageServiceC(address, channelCredential, grpcOptions) as unknown as packageService.PackageServiceClient;
+
+packageServiceClient.listPackages(new ListPackagesRequest(), (error, response) => {
+    if (error) throw error;
+    if (!response) throw "Undefined response";
+    let first = true;
+    for (const packageId of response.getPackageIdsList()) {
+        let getPackageRequest = new GetPackageRequest();
+        getPackageRequest.setPackageId(packageId);
+        packageServiceClient.getPackage(getPackageRequest, (error, response) => {
+            if (error) throw error;
+            if (!response) throw "Undefined response";
+            const templateNames = getTemplateIds(response.getArchivePayload_asU8());
+            for (const {moduleName, entityName} of templateNames) {
+                const name = `${moduleName}:${entityName}`;
+                writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
+                    packageId: packageId,
+                    moduleName: moduleName,
+                    entityName: entityName
+                })}`);
+                first = false;
+            }
+        });
+    }});
+
+
+function getTemplateIds(archivePayload : Uint8Array) {
     const templateNames = [];
-    const archive = daml.lf.ArchivePayload.deserializeBinary(archivePayload).getDamlLf1();
+    const archive = ArchivePayload.deserializeBinary(archivePayload).getDamlLf1();
     if (!archive) throw "No Archive";
     for (const damlModule of archive.getModulesList()) {
         if (damlModule.hasNameDname()) {
@@ -44,37 +84,6 @@ function getTemplateIds(archivePayload : any) {
     }
     return templateNames;
 }
-
-// This allows to download packages smaller than 50MB (after compression)
-// Raise this if your packages is larger than this size
-const grpcOptions = {
-    'grpc.max_receive_message_length': 50 * 1024 * 1024
-};
-daml.DamlLedgerClient.connect({ host: host, port: port, grpcOptions: grpcOptions }, (error, client) => {
-    if (error) throw error;
-    if (!client) throw "Undefined client";
-    let first = true;
-    client.packageClient.listPackages((error, response) => {
-        if (error) throw error;
-        if (!response) throw "Undefined response";
-        for (const packageId of response.packageIds) {
-            client.packageClient.getPackage(packageId, (error, response) => {
-                if (!response) throw "Undefined response";
-                if (error) throw error;
-                const templateNames = getTemplateIds(response.archivePayload);
-                for (const {moduleName, entityName} of templateNames) {
-                    const name = `${moduleName}:${entityName}`;
-                    writer.write(`${first ? '' : ','}"${name}":${JSON.stringify({
-                        packageId: packageId,
-                        moduleName: moduleName,
-                        entityName: entityName
-                    })}`);
-                    first = false;
-                }
-            });
-        }
-    });
-});
 
 function printUsageAndExit() {
     console.log('Usage: [-h/--host LEDGER_HOST] [-p/--port LEDGER_PORT] [-o/--out OUT_FILE]');

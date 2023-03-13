@@ -30,6 +30,10 @@ The focus is not on the complexity of the model, but rather on how to use the bi
 
 Make sure you have the Daml SDK installed and that the version matches the one in this project's `daml.yaml`.
 
+
+    setup.sh
+    grpc-codegen.sh
+
 [Back to the table of contents](#table-of-contents)
 
 ## Create the project
@@ -83,6 +87,7 @@ You are now set to write your own application. The template includes a skeleton 
 
 ## Understand the skeleton
 
+#### TODO: Rewrite.
 The code for the script you just ran is `index.ts`.
 Let's go through the skeleton part by part to understand what's going on:
 

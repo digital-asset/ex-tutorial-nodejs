@@ -3,6 +3,9 @@ target/
 .vscode/
 logs/
 log/
+proto/
+src/generated/
+test/generated/
 *.log
 template-ids.json
 .package-database

@@ -4,14 +4,20 @@
 import { credentials, makeClientConstructor } from '@grpc/grpc-js';
 import * as activeContractsService  from "./src/generated/com/daml/ledger/api/v1/active_contracts_service_grpc_pb";
 import { GetActiveContractsRequest, GetActiveContractsResponse } from './src/generated/com/daml/ledger/api/v1/active_contracts_service_pb';
+import * as commandService  from "./src/generated/com/daml/ledger/api/v1/command_service_grpc_pb";
+import { SubmitAndWaitRequest } from './src/generated/com/daml/ledger/api/v1/command_service_pb';
+import { Command, Commands, CreateCommand } from './src/generated/com/daml/ledger/api/v1/commands_pb';
+import * as transactionService  from "./src/generated/com/daml/ledger/api/v1/transaction_service_grpc_pb";
+import { GetTransactionsRequest } from './src/generated/com/daml/ledger/api/v1/transaction_service_pb';
 
 import { Filters, InclusiveFilters, TransactionFilter } from './src/generated/com/daml/ledger/api/v1/transaction_filter_pb';
-import { Identifier } from './src/generated/com/daml/ledger/api/v1/value_pb';
+import { CreatedEvent } from './src/generated/com/daml/ledger/api/v1/event_pb';
+import { Identifier, Record, RecordField, Value } from './src/generated/com/daml/ledger/api/v1/value_pb';
+import { LedgerOffset } from './src/generated/com/daml/ledger/api/v1/ledger_offset_pb';
 
 import * as templateIds from './template-ids.json';
 
 import { v4 as uuid} from 'uuid';
-import { CreatedEvent } from './src/generated/com/daml/ledger/api/v1/event_pb';
 
 const PING = templateIds['PingPongGame:Ping'];
 const PONG = templateIds['PingPongGame:Pong'];
@@ -31,34 +37,50 @@ if (!sender || !receiver) {
 // console.log(`sender ${sender}`);
 // console.log(`receiver ${receiver}`);
 
+const pingIdentifier = new Identifier();
+pingIdentifier.setPackageId(PING.packageId);
+pingIdentifier.setModuleName(PING.moduleName);
+pingIdentifier.setEntityName(PING.entityName);
+
+const pongIdentifier = new Identifier();
+pongIdentifier.setPackageId(PONG.packageId);
+pongIdentifier.setModuleName(PONG.moduleName);
+pongIdentifier.setEntityName(PONG.entityName);
+
+
+
 /* Setup transaction filter.
  */
 let senderFilter = new Filters();
 let inclusiveSenderFilter = new InclusiveFilters();
-inclusiveSenderFilter.setTemplateIdsList([PING, PONG].map(value => {
-  const identifier =new Identifier();
-  identifier.setPackageId(value.packageId);
-  identifier.setModuleName(value.moduleName);
-  identifier.setEntityName(value.entityName);
-  return identifier;
-}));
+inclusiveSenderFilter.setTemplateIdsList([pingIdentifier, pingIdentifier]);
 
 senderFilter.setInclusive(inclusiveSenderFilter);
-const filtersByParty : Record<string, Filters> = {} ;
+const filtersByParty : {[key:string]:Filters} = {};
 filtersByParty[sender] = senderFilter;
 let transactionFilter = new TransactionFilter();
 let transactionFilterObj = transactionFilter.getFiltersByPartyMap();
 // Being explicit about the above conversion even though we only have on Party.
 Object.keys(filtersByParty).forEach((party) => {
-   // console.log(`Setting ${party} to filter ${JSON.stringify(filtersByParty[party])}`);
   transactionFilterObj.set(party, filtersByParty[party])
 });
 
-// console.log("transactionFilterObj:", JSON.stringify(transactionFilterObj));
-// console.log("transactionFilter:", JSON.stringify(transactionFilter));
+const activeContractsServiceC = makeClientConstructor((activeContractsService as any)['com.daml.ledger.api.v1.ActiveContractsService'], 'ActiveContractsService');
+const activeContractsServiceClient =
+                                                          // {} = grpcOptions
+  new activeContractsServiceC(address, channelCredential, {}) as unknown as activeContractsService.ActiveContractsServiceClient;
+
+const commandServiceC = makeClientConstructor((commandService as any)['com.daml.ledger.api.v1.CommandService'], 'CommandService');
+const commandServiceClient =
+  new commandServiceC(address, channelCredential, {}) as unknown as commandService.CommandServiceClient;
+
+const transactionServiceC = makeClientConstructor((transactionService as any)['com.daml.ledger.api.v1.TransactionService'], 'TransactionService');
+const transactionServiceClient =
+  new transactionServiceC(address, channelCredential, {}) as unknown as transactionService.TransactionServiceClient;
+
 
 type EventCallback = (workflowId:string, events:any[]) => void
-type CompleteCallback = (offset : string) => void
+type CompleteCallback = (offset : string) => Promise<void>    // Use async
 
 async function processActiveContracts( callback : EventCallback, onComplete : CompleteCallback) {
     /* An important service of the Ledger API is the Active Contract Service
@@ -67,12 +89,6 @@ async function processActiveContracts( callback : EventCallback, onComplete : Co
      * what contracts (that meet the required filter) are currently active
      * on the ledger.
      */
-    const activeContractsServiceC = makeClientConstructor((activeContractsService as any)['com.daml.ledger.api.v1.ActiveContractsService'], 'LedgerIdentityService');
-
-    const activeContractsServiceClient =
-                                                          // {} = grpcOptions
-      new activeContractsServiceC(address, channelCredential, {}) as unknown as activeContractsService.ActiveContractsServiceClient;
-
     let getActiveContractsRequest = new GetActiveContractsRequest();
     getActiveContractsRequest.setFilter(transactionFilter);
 
@@ -95,105 +111,112 @@ async function processActiveContracts( callback : EventCallback, onComplete : Co
           console.log(`events -  ${JSON.stringify(events)}}`);
         }
     }
-    console.log(`events ${JSON.stringify(events)}}`);
-
     callback(workflowId, events);
 
-    onComplete(offset);
+    await onComplete(offset);
 }
 
 (async () => {
-  try {
-    let res = processActiveContracts( (_workflowId, events) => {
-      for(let event of events){
-        console.log(`event: ${event}`);
-      }},
-      (offset) => console.log(`offset: ${offset}`)
-    );
-    console.log(`${res}`);
+    try {
+        let eventsCallback = (workflowId:string, events:CreatedEvent[]) => {
+            for(let event of events){
+              console.log(`w ${workflowId} -> event: ${event}`);
+            }};
+        let res = processActiveContracts( eventsCallback,
+                    async (offset) => {
+                          console.log(`offset: ${offset}`)
+                          for(let p = 0; p < initialNumberOfPings; p++)
+                              createPing();
+                          await listenForTransactions( offset, eventsCallback);
+                      });
+        console.log(`${res}`);
     } catch (e) {
-      console.error(`error: ${e}`);
+        console.error(`error: ${e}`);
     }}) ();
 
-// // To create commands against the ledger we need to construct commands.
-// function createPing (client : LedgerClient) {
-//     const request = {
-//         // A set of commands to be applied atomically
-//         commands: {
-//             applicationId: 'PingPongGameApp',   //  the name of your application
-//             workflowId: `Ping-${sender}`,    // an (optional) identifier you can
-//                                              // use to group commands pertaining
-//                                                      // to one of your workflows
-//             commandId: uuid(),           // a unique identifier for the commands
-//             party: sender,                      // who is submitting the command
-//             list: [{                      // Each request is made up of commands
-//                 commandType: 'create' as const,
+// To create commands against the ledger we need to construct commands.
+function createPing () {
 
-//                 templateId: PING,       // the identifier of the template of the
-//                                             // contract you wish to create Ping.
-//                 arguments: {                  // an object containing the fields
-//                                              // necessary to create the contract
-//                     fields: {
-//                         sender: Daml.party(sender),
-//                         receiver: Daml.party(receiver),
-//                         count: Daml.int64(0)
-//                     }
-//                 }
-//             }]
-//       }
-//     };
+    let createCommand = new CreateCommand();
+    createCommand.setTemplateId(pingIdentifier);
 
-//     /* The Ledger Client has a CommandClient that wraps the Command Service
-//      * https://docs.daml.com/app-dev/services.html#command-service
-//      * It issues commands against the ledger and waits for a response
-//      */
-//     client.commandClient.submitAndWait(request, (error, response) => {
-//         if (error) throw error;
-//         console.log(`Created Ping contract from ${sender} to ${receiver}: ${response}.`);
-//     });
-// }
+    let senderField = new RecordField();
+    senderField.setLabel('sender');
+    let senderValue = new Value();
+    senderValue.setParty(sender);
+    senderField.setValue(senderValue);
 
-// // The ledger changes as new transactions are added to it.
-// // Here we subscribe to those changes.
-// function listenForTransactions(client : LedgerClient,
-//                                 offset : string,
-//                                 transactionFilter : TransactionFilter,
-//                                 callback : EventCallback) {
-//     console.log(`${sender} starts reading transactions from offset: ${offset}.`);
-//     const request = {
-//         begin: { offsetType: 'absolute' as const,        // Listen at a specific
-//                  absolute: offset                    // offset to avoid history.
-//                },
-//         filter: transactionFilter                // Only for specific templates.
-//     };
+    let receiverField = new RecordField();
+    receiverField.setLabel('receiver');
+    let receiverValue = new Value();
+    receiverValue.setParty(receiver);
+    receiverField.setValue(receiverValue);
 
-//     const transactions = client.transactionClient.getTransactions(request);
-//     transactions.on('data', response => {
-//         for (const transaction of response.transactions) {
-//             if(!callback) {
-//                 console.log('Transaction read:', transaction.transactionId);
-//             } else {
-//                 const events = [];
-//                 // Accumulate what new things were created on the ledger as
-//                 // part of this transaction.
-//                 for (const event of transaction.events) {
-//                     if (event.eventType === 'created') {
-//                       events.push(event);
-//                     }
-//                 }
-//                 if (events.length > 0) {
-//                     // And the react to them via this callback.
-//                     callback(transaction.workflowId, events);
-//                 }
-//             }
-//         }
-//     });
-//     transactions.on('error', error => {
-//         console.error(`${sender} encountered an error while processing transactions!`);
-//         console.error(error);
-//         process.exit(-1);
-//     });
-// };
+    let countField = new RecordField();
+    countField.setLabel('count');
+    let countValue = new Value();
+    countValue.setInt64('0');
+    countField.setValue(countValue);
+
+    let pingCreatePayloadRecordList = [senderField, receiverField, countField];
+
+    let pingCreatePayloadRecord = new Record();
+    pingCreatePayloadRecord.setFieldsList(pingCreatePayloadRecordList);
+    createCommand.setCreateArguments(pingCreatePayloadRecord);
+
+    let command = new Command();
+    command.setCreate(createCommand);
+
+    let commands = new Commands();
+    commands.setApplicationId('PingPongGameApp');   //  the name of your application
+    commands.setWorkflowId(`Ping-${sender}`);    // an (optional) identifier you can
+                                                 // use to group commands pertaining
+                                                         // to one of your workflows
+    commands.setCommandId(uuid());           // a unique identifier for the commands
+    commands.setParty(sender);
+    commands.setCommandsList([command]);
+
+    const submitAndWaitRequest = new SubmitAndWaitRequest();
+    submitAndWaitRequest.setCommands(commands);
+    commandServiceClient.submitAndWait(submitAndWaitRequest, (error, response) => {
+        if (error) throw error;
+        console.log(`Created Ping contract from ${sender} to ${receiver}.`);
+    })
+}
+
+// The ledger changes as new transactions are added to it.
+// Here we subscribe to those changes.
+async function listenForTransactions( offset : string, callback : EventCallback) {
+    console.log(`${sender} starts reading transactions from offset: ${offset}.`);
+
+    let getTransactionsRequest = new GetTransactionsRequest();
+    let ledgerOffset = new LedgerOffset();
+    ledgerOffset.setAbsolute(offset);
+    getTransactionsRequest.setFilter(transactionFilter);
+    getTransactionsRequest.setBegin(ledgerOffset);
+    let transactionStream = transactionServiceClient.getTransactions(getTransactionsRequest);
+
+    for await (let transactionResponse of transactionStream){
+        for (let transaction of transactionResponse.getTransactionsList()){
+            if(!callback) {
+                console.log('Transaction read:', transaction.getTransactionId());
+            } else {
+                const events = [];
+                // Accumulate what new things were created on the ledger as
+                // part of this transaction.
+                for (const event of transaction.getEventsList()) {
+                    if (event.hasCreated()) {
+                        events.push(event.getCreated());
+                    }
+                }
+                if (events.length > 0) {
+                    // And the react to them via this callback.
+                    callback(transaction.getWorkflowId(), events);
+                }
+            }
+        }
+    }
+}
 
 // // We will react to our create events.
 // function react(client : LedgerClient, workflowId : string, events : CreatedEvent[]) {

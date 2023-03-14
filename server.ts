@@ -6,9 +6,9 @@ import * as activeContractsService  from "./src/generated/com/daml/ledger/api/v1
 import { GetActiveContractsRequest, GetActiveContractsResponse } from './src/generated/com/daml/ledger/api/v1/active_contracts_service_pb';
 import * as commandService  from "./src/generated/com/daml/ledger/api/v1/command_service_grpc_pb";
 import { SubmitAndWaitRequest } from './src/generated/com/daml/ledger/api/v1/command_service_pb';
-import { Command, Commands, CreateCommand } from './src/generated/com/daml/ledger/api/v1/commands_pb';
+import { Command, Commands, CreateCommand, ExerciseCommand } from './src/generated/com/daml/ledger/api/v1/commands_pb';
 import * as transactionService  from "./src/generated/com/daml/ledger/api/v1/transaction_service_grpc_pb";
-import { GetTransactionsRequest } from './src/generated/com/daml/ledger/api/v1/transaction_service_pb';
+import { GetTransactionsResponse, GetTransactionsRequest } from './src/generated/com/daml/ledger/api/v1/transaction_service_pb';
 
 import { Filters, InclusiveFilters, TransactionFilter } from './src/generated/com/daml/ledger/api/v1/transaction_filter_pb';
 import { CreatedEvent } from './src/generated/com/daml/ledger/api/v1/event_pb';
@@ -33,9 +33,6 @@ if (!sender || !receiver) {
     console.log('Missing sender and/or receiver arguments, exiting.');
     process.exit(-1);
 }
-
-// console.log(`sender ${sender}`);
-// console.log(`receiver ${receiver}`);
 
 const pingIdentifier = new Identifier();
 pingIdentifier.setPackageId(PING.packageId);
@@ -103,17 +100,13 @@ async function processActiveContracts( callback : EventCallback, onComplete : Co
         if(!workflowId)
           workflowId = r.getWorkflowId();
         offset = r.getOffset();
-        // console.log(`r: ${JSON.stringify(r)}`);
-        // console.log(`r.getActiveContractsList: ${JSON.stringify(r.getActiveContractsList())}`);
-        // events.concat(r.getActiveContractsList());
         for(let e of r.getActiveContractsList()){
           events.push(e)
-          console.log(`events -  ${JSON.stringify(events)}}`);
         }
     }
     callback(workflowId, events);
 
-    await onComplete(offset);
+    return await onComplete(offset);
 }
 
 (async () => {
@@ -127,7 +120,7 @@ async function processActiveContracts( callback : EventCallback, onComplete : Co
                           console.log(`offset: ${offset}`)
                           for(let p = 0; p < initialNumberOfPings; p++)
                               createPing();
-                          await listenForTransactions( offset, eventsCallback);
+                          return await listenForTransactions(offset, eventsCallback);
                       });
         console.log(`${res}`);
     } catch (e) {
@@ -197,67 +190,67 @@ async function listenForTransactions( offset : string, callback : EventCallback)
     let transactionStream = transactionServiceClient.getTransactions(getTransactionsRequest);
 
     for await (let transactionResponse of transactionStream){
-        for (let transaction of transactionResponse.getTransactionsList()){
-            if(!callback) {
-                console.log('Transaction read:', transaction.getTransactionId());
-            } else {
-                const events = [];
-                // Accumulate what new things were created on the ledger as
-                // part of this transaction.
-                for (const event of transaction.getEventsList()) {
-                    if (event.hasCreated()) {
-                        events.push(event.getCreated());
-                    }
+        let t = transactionResponse as GetTransactionsResponse
+        for (let transaction of t.getTransactionsList()){
+            const events = [];
+            // Accumulate what new things were created on the ledger as
+            // part of this transaction.
+            for (const event of transaction.getEventsList()) {
+                if (event.hasCreated()) {
+                    events.push(event.getCreated());
                 }
-                if (events.length > 0) {
-                    // And the react to them via this callback.
-                    callback(transaction.getWorkflowId(), events);
-                }
+            }
+            if (events.length > 0) {
+                // And the react to them via this callback.
+                await callback(transaction.getWorkflowId(), events);
             }
         }
     }
 }
 
-// // We will react to our create events.
-// function react(client : LedgerClient, workflowId : string, events : CreatedEvent[]) {
-//     const reactions = [];
-//     for (const event of events) {
-//         // We are explicitly deconstructing by pattern matching the Ping and Pong templates payload.
-//         const { receiver: { party: receiver }, count: { int64: count } } = event.arguments.fields as any;
-//         // Is the event to us? Ie, are we the receiver and can respond?
-//         if (receiver === sender) {
-//             const templateId = event.templateId;
-//             const contractId = event.contractId;
-//             const reaction = templateId.moduleName === PING.moduleName &&
-//                               templateId.entityName === PING.entityName ? 'ReplyPong' : 'ReplyPing';
-//             console.log(`${sender} (workflow ${workflowId}): ${reaction} at count ${count}`);
-//             // Add an exercise command to react with the choice to transition
-//             // to the opposite state.
-//             reactions.push({
-//                 commandType: 'exercise' as const,
-//                 templateId: templateId,
-//                 contractId: contractId,
-//                 choice: reaction,
-//                 argument: Daml.record({})
-//             });
-//         }
-//     }
-//     if (reactions.length > 0) {
-//         const request = {
-//             commands: {
-//                 applicationId: 'PingPongGameApp',
-//                 workflowId: workflowId,
-//                 commandId: uuid(),
-//                 party: sender,
-//                 list: reactions
-//             }
-//         }
-//         // Use the same CommandClient client to send this
-//         client.commandClient.submitAndWait(request, (error, _) => {
-//             if (error) throw error;
-//         });
-//     }
-// }
+// We will react to our create events.
+function react(workflowId : string, events : CreatedEvent[]) {
+    const reactions = [];
+    for (const event of events) {
+        let args = event.getCreateArguments();  // Record
+        if (!args) throw "Create event without arguments"
+        let fieldIndex = 0; // used for records returned in non-verbose mode
+        // We are explicitly deconstructing by pattern matching the Ping and Pong templates payload.
+        let [ _senderField, receiverField, countField] =  args.getFieldsList();
+        let receiverParty = receiverField.getValue()?.getParty();
+        let count = countField.getValue()?.getInt64();
+        if (receiverParty === sender) {
+            let exerciseCommand = new ExerciseCommand();
+            let templateId = event.getTemplateId();
+            exerciseCommand.setTemplateId(templateId);
+            exerciseCommand.setContractId(event.getContractId());
+            const reaction = templateId?.getModuleName() === PING.moduleName &&
+                              templateId.getEntityName() === PING.entityName ?
+                                'ReplyPong' : 'ReplyPing';
+            console.log(`${sender} (workflow ${workflowId}): ${reaction} at count ${count}`);
+            // Add an exercise command to react with the choice to transition
+            // to the opposite state.
+            exerciseCommand.setChoice(reaction);
+            exerciseCommand.setChoiceArgument(new Value());
+            let command = new Command();
+            command.setExercise(exerciseCommand);
+            reactions.push(command);
+       }
+    }
+    if (reactions.length > 0) {
+        let commands = new Commands();
+        commands.setApplicationId('PingPongGameApp');
+        commands.setWorkflowId(workflowId);
+        commands.setCommandId(uuid());
+        commands.setParty(sender);
+        commands.setCommandsList(reactions);
+        const submitAndWaitRequest = new SubmitAndWaitRequest();
+        submitAndWaitRequest.setCommands(commands);
+        commandServiceClient.submitAndWait(submitAndWaitRequest, (error,_) => {
+            if (error) throw error;
+        });
+    }
+}
 
 // /* Main loop */
 // // Setup filters for just the PING and PONG contracts seen by the sender.

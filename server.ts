@@ -6,7 +6,7 @@ import * as activeContractsService  from "./src/generated/com/daml/ledger/api/v1
 import { GetActiveContractsRequest, GetActiveContractsResponse } from './src/generated/com/daml/ledger/api/v1/active_contracts_service_pb';
 import * as commandService  from "./src/generated/com/daml/ledger/api/v1/command_service_grpc_pb";
 import { SubmitAndWaitRequest } from './src/generated/com/daml/ledger/api/v1/command_service_pb';
-import { Command, Commands, CreateCommand, ExerciseCommand } from './src/generated/com/daml/ledger/api/v1/commands_pb';
+import { Command, Commands, CreateCommand, ExerciseByKeyCommand, ExerciseCommand } from './src/generated/com/daml/ledger/api/v1/commands_pb';
 import * as transactionService  from "./src/generated/com/daml/ledger/api/v1/transaction_service_grpc_pb";
 import { GetTransactionsResponse, GetTransactionsRequest } from './src/generated/com/daml/ledger/api/v1/transaction_service_pb';
 
@@ -45,12 +45,11 @@ pongIdentifier.setModuleName(PONG.moduleName);
 pongIdentifier.setEntityName(PONG.entityName);
 
 
-
 /* Setup transaction filter.
  */
 let senderFilter = new Filters();
 let inclusiveSenderFilter = new InclusiveFilters();
-inclusiveSenderFilter.setTemplateIdsList([pingIdentifier, pingIdentifier]);
+inclusiveSenderFilter.setTemplateIdsList([pingIdentifier, pongIdentifier]);
 
 senderFilter.setInclusive(inclusiveSenderFilter);
 const filtersByParty : {[key:string]:Filters} = {};
@@ -98,29 +97,29 @@ async function processActiveContracts( callback : EventCallback, onComplete : Co
     for await (let response of responseStream){
         let r = response as GetActiveContractsResponse;
         if(!workflowId)
-          workflowId = r.getWorkflowId();
+            workflowId = r.getWorkflowId();
         offset = r.getOffset();
         for(let e of r.getActiveContractsList()){
-          events.push(e)
+            events.push(e)
         }
     }
-    callback(workflowId, events);
+    let r = callback(workflowId, events);
 
     return await onComplete(offset);
 }
 
 (async () => {
     try {
-        let eventsCallback = (workflowId:string, events:CreatedEvent[]) => {
-            for(let event of events){
-              console.log(`w ${workflowId} -> event: ${event}`);
-            }};
-        let res = processActiveContracts( eventsCallback,
+        // let eventsCallback = (workflowId:string, events:CreatedEvent[]) => {
+        //     for(let event of events){
+        //        console.log(`w ${workflowId} -> event: ${event}`);
+        //     }};
+        let res = processActiveContracts( react,
                     async (offset) => {
                           console.log(`offset: ${offset}`)
                           for(let p = 0; p < initialNumberOfPings; p++)
                               createPing();
-                          return await listenForTransactions(offset, eventsCallback);
+                          return await listenForTransactions(offset, react);
                       });
         console.log(`${res}`);
     } catch (e) {
@@ -202,7 +201,7 @@ async function listenForTransactions( offset : string, callback : EventCallback)
             }
             if (events.length > 0) {
                 // And the react to them via this callback.
-                await callback(transaction.getWorkflowId(), events);
+                callback(transaction.getWorkflowId(), events);
             }
         }
     }
@@ -216,27 +215,50 @@ function react(workflowId : string, events : CreatedEvent[]) {
         if (!args) throw "Create event without arguments"
         let fieldIndex = 0; // used for records returned in non-verbose mode
         // We are explicitly deconstructing by pattern matching the Ping and Pong templates payload.
-        let [ _senderField, receiverField, countField] =  args.getFieldsList();
+        let [ senderField, receiverField, countField] =  args.getFieldsList();
         let receiverParty = receiverField.getValue()?.getParty();
+        let senderParty = senderField.getValue()?.getParty();
         let count = countField.getValue()?.getInt64();
-        if (receiverParty === sender) {
-            let exerciseCommand = new ExerciseCommand();
+
+        if (receiverParty === sender && senderParty === receiver) {
             let templateId = event.getTemplateId();
-            exerciseCommand.setTemplateId(templateId);
-            exerciseCommand.setContractId(event.getContractId());
             const reaction = templateId?.getModuleName() === PING.moduleName &&
-                              templateId.getEntityName() === PING.entityName ?
-                                'ReplyPong' : 'ReplyPing';
-            console.log(`${sender} (workflow ${workflowId}): ${reaction} at count ${count}`);
-            // Add an exercise command to react with the choice to transition
-            // to the opposite state.
-            exerciseCommand.setChoice(reaction);
-            exerciseCommand.setChoiceArgument(new Value());
-            let command = new Command();
-            command.setExercise(exerciseCommand);
-            reactions.push(command);
+                                      templateId.getEntityName() === PING.entityName ?
+                                      'ReplyPong' : 'ReplyPing';
+            if (reaction == 'ReplyPong') {
+              let exerciseCommand = new ExerciseCommand();
+              exerciseCommand.setTemplateId(templateId);
+              exerciseCommand.setContractId(event.getContractId());
+              // Add an exercise command to react with the choice to transition
+              // to the opposite state.
+              exerciseCommand.setChoice(reaction);
+              let choiceArg = new Value();
+              choiceArg.setRecord(new Record());
+              exerciseCommand.setChoiceArgument(choiceArg);
+              let command = new Command();
+              command.setExercise(exerciseCommand);
+              reactions.push(command);
+          } else {
+              console.log(`by key`);
+              let exerciseByKeyCommand = new ExerciseByKeyCommand();
+              exerciseByKeyCommand.setTemplateId(templateId);
+
+              let contractKey = new Value();
+              contractKey.setParty(senderParty);
+              exerciseByKeyCommand.setContractKey(contractKey);
+              exerciseByKeyCommand.setChoice(reaction)
+              let choiceArg = new Value();
+              choiceArg.setRecord(new Record());
+
+              exerciseByKeyCommand.setChoiceArgument(choiceArg);
+              let command = new Command();
+              command.setExercisebykey(exerciseByKeyCommand);
+              reactions.push(command);
+
+            }
        }
     }
+
     if (reactions.length > 0) {
         let commands = new Commands();
         commands.setApplicationId('PingPongGameApp');
@@ -251,24 +273,3 @@ function react(workflowId : string, events : CreatedEvent[]) {
         });
     }
 }
-
-// /* Main loop */
-// // Setup filters for just the PING and PONG contracts seen by the sender.
-// // Register a callback to Pong a Ping and Ping a Pong.
-// const eventCallback = (workflowId:string, events:CreatedEvent[]) =>
-//         react(workflowId, events)
-
-// // In the beginning look at all currently active contracts on the ledger
-// // and react to them with the above call back.
-// processActiveContracts(client, transactionFilter, eventCallback,
-//     // And then afterwards
-//     (offset : string) => {
-//         // Listen to all new transactions.
-//         listenForTransactions(client, offset, transactionFilter,
-//             // React to them in the same way.
-//             eventCallback);
-//         // But also create a set of new pings for the receiver.
-//         for(let p = 0; p < initialNumberOfPings; p++)
-//             createPing(client);
-// });
-

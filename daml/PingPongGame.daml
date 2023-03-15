@@ -29,7 +29,11 @@ template Pong
     signatory sender
     observer receiver
 
-    choice ReplyPing : ()
+    key sender : Party
+    maintainer key
+
+    choice ReplyPing : () with
+        foo : Int
       controller receiver
       do
         if count >= 3 then return ()
